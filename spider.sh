@@ -53,7 +53,7 @@ do
         ;;
     u)
         cmdUrl="$OPTARG"
-        echo "Analyse url:$cmdUrl"
+        # echo "Analyse url:$cmdUrl"
         ;;
     ?)
         echo "commande $1 inconnue"
@@ -69,3 +69,17 @@ if [ "$flagGetOpts" == 0 ]; then
     exit 1
 fi
 
+function getUrlStatus() {
+    if [[ -n "$1" && "$1" != "" ]]; then
+        httpStatus=$(curl --write-out %{http_code} --silent --output /dev/null "$1")
+    fi
+    echo "$httpStatus"
+}
+
+function main() {
+    # Test URL
+    urlStatus="$(getUrlStatus "$cmdUrl")"
+    echo "$urlStatus:$cmdUrl"
+}
+
+main
