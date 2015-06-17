@@ -18,6 +18,7 @@
 
 # Default variables {{{1
 flagGetOpts=0
+declare -A urlPageList
 
 # FUNCTION usage() {{{1
 # Return the helping message for the use.
@@ -69,17 +70,45 @@ if [ "$flagGetOpts" == 0 ]; then
     exit 1
 fi
 
+# getUrlStatus() {{{1
 function getUrlStatus() {
     if [[ -n "$1" && "$1" != "" ]]; then
         httpStatus=$(curl --write-out %{http_code} --silent --output /dev/null "$1")
+    else
+        httpStatus=""
     fi
     echo "$httpStatus"
 }
 
+# getLinkFromUrl() {{{1
+# @FIXME: We need a better solution because it run forever
+function getLinkFromUrl() {
+    if [[ -n "$1" && "$1" != "" ]]; then
+        echo "check links in $1"
+        urlArray=($(wget --spider --force-html -r "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
+        # urlArray=($(ls -d */))
+        echo "Not much links: ${#urlArray[@]}"
+    else
+        urlArray=()
+    fi
+}
+
+# main() {{{1
 function main() {
     # Test URL
-    urlStatus="$(getUrlStatus "$cmdUrl")"
-    echo "$urlStatus:$cmdUrl"
+    # urlStatus="$(getUrlStatus "$cmdUrl")"
+    # echo "$urlStatus:$cmdUrl"
+    declare -a urlArray
+    getLinkFromUrl "$cmdUrl"
+    for i in "${urlArray[@]}"
+    do
+        urlStatus="$(getUrlStatus "$i")"
+        echo "$urlStatus:$i"
+    done
+
+    echo "${urlArray[2]}"
+    # urlPageList["test"] = 'yes'
+    
 }
 
 main
