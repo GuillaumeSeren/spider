@@ -84,8 +84,13 @@ function getUrlStatus() {
 function getLinkFromUrl() {
     if [[ -n "$1" && "$1" != "" ]]; then
         echo "check links in $1"
-        urlArray=($(wget --spider --force-html -r -l1 "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
+        tempFile="$(mktemp -d)"
+        echo "Use tempFile: $tempFile"
+        urlArray=($(wget --spider --force-html -P "$tempFile" -r -l1 "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         echo "Not much links: ${#urlArray[@]}"
+        rm -r "$tempFile"
+        echo "cleaned tempFile"
+
     else
         urlArray=()
     fi
