@@ -81,12 +81,10 @@ function getUrlStatus() {
 }
 
 # getLinkFromUrl() {{{1
-# @FIXME: We need a better solution because it run forever
 function getLinkFromUrl() {
     if [[ -n "$1" && "$1" != "" ]]; then
         echo "check links in $1"
-        urlArray=($(wget --spider --force-html -r "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
-        # urlArray=($(ls -d */))
+        urlArray=($(wget --spider --force-html -r -l1 "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         echo "Not much links: ${#urlArray[@]}"
     else
         urlArray=()
@@ -99,16 +97,14 @@ function main() {
     # urlStatus="$(getUrlStatus "$cmdUrl")"
     # echo "$urlStatus:$cmdUrl"
     declare -a urlArray
+    echo "testing: $cmdUrl"
     getLinkFromUrl "$cmdUrl"
+
     for i in "${urlArray[@]}"
     do
         urlStatus="$(getUrlStatus "$i")"
         echo "$urlStatus:$i"
     done
-
-    echo "${urlArray[2]}"
-    # urlPageList["test"] = 'yes'
-    
 }
 
 main
