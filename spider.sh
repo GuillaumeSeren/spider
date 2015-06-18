@@ -9,8 +9,6 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Return a list a ressource from a page.
-# @TODO: Test a ressource and get HTTP code.
 # @TODO: Explore all ressources but stay on the same domain.
 
 # Error Codes {{{1
@@ -18,9 +16,10 @@
 
 # Default variables {{{1
 flagGetOpts=0
+defaultRLevel=1
 declare -A urlPageList
 
-# FUNCTION usage() {{{1
+# usage() {{{1
 # Return the helping message for the use.
 function usage()
 {
@@ -34,17 +33,22 @@ This script explore a webapp and test ressources state.
 OPTIONS:
     -h  Show this message.
     -u  url (needed)
+    -l  recursivity level :
+        n: default 1
+        0: infinite
 
 Sample:
     Test a simple url
     "$0" -u guillaumeseren.com
+    Find all linked ressources
+    "$0" -u guillaumeseren.com -l 0
 
 DOC
 }
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts ":u:h" OPTION
+while getopts ":u:l:h" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -55,6 +59,9 @@ do
     u)
         cmdUrl="$OPTARG"
         # echo "Analyse url:$cmdUrl"
+        ;;
+    l)
+        cmdLevel="$OPTARG"
         ;;
     ?)
         echo "commande $1 inconnue"
@@ -86,7 +93,7 @@ function getLinkFromUrl() {
         echo "check links in $1"
         tempFile="$(mktemp -d)"
         echo "Use tempFile: $tempFile"
-        urlArray=($(wget --spider --force-html -P "$tempFile" -r -l1 "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
+        urlArray=($(wget --spider --force-html -P "$tempFile" -r "$rLevel" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         echo "Not much links: ${#urlArray[@]}"
         rm -r "$tempFile"
         echo "cleaned tempFile"
@@ -96,8 +103,24 @@ function getLinkFromUrl() {
     fi
 }
 
+# getRecursivityLevel() {{{1
+function getRecursivityLevel(){
+    if [[ -n "$1" && "$1" != "" ]]; then
+        if [[ "$1" != 0 ]]; then
+            local rLevel="-l $1"
+        else
+            local rLevel=""
+        fi
+    else
+        local rLevel="-l $defaultRLevel"
+    fi
+    echo "$rLevel"
+}
+
 # main() {{{1
 function main() {
+    # We need a recursive level
+    rLevel=$(getRecursivityLevel "$cmdLevel")
     # Test URL
     # urlStatus="$(getUrlStatus "$cmdUrl")"
     # echo "$urlStatus:$cmdUrl"
