@@ -36,19 +36,20 @@ OPTIONS:
     -l  recursivity level :
         n: default 1
         0: infinite
+    -d  Define a target domain to focus.
 
 Sample:
     Test a simple url
     "$0" -u guillaumeseren.com
     Find all linked ressources
-    "$0" -u guillaumeseren.com -l 0
+    "$0" -u guillaumeseren.com -l 0 -d guillaumeseren.com
 
 DOC
 }
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts ":u:l:h" OPTION
+while getopts ":u:l:d:h" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -62,6 +63,9 @@ do
         ;;
     l)
         cmdLevel="$OPTARG"
+        ;;
+    d)
+        cmdDomain="$OPTARG"
         ;;
     ?)
         echo "commande $1 inconnue"
@@ -93,7 +97,8 @@ function getLinkFromUrl() {
         echo "check links in $1"
         tempFile="$(mktemp -d)"
         echo "Use tempFile: $tempFile"
-        urlArray=($(wget --spider --force-html -P "$tempFile" -r "$rLevel" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
+        echo "wget command: wget --spider --force-html -P $tempFile -r $rLevel $domainTarget $1"
+        urlArray=($(wget --spider --force-html -P "$tempFile" -r "$rLevel" "$domainTarget" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         echo "Not much links: ${#urlArray[@]}"
         rm -r "$tempFile"
         echo "cleaned tempFile"
@@ -117,10 +122,23 @@ function getRecursivityLevel(){
     echo "$rLevel"
 }
 
+# getDomainTarget() {{{1
+function getDomainTarget() {
+    local domains=""
+    if [[ -n "$1" && "$1" != "" ]]; then
+            domains="--domains=$1"
+    else
+            domains=""
+    fi
+    echo "$domains"
+}
+
 # main() {{{1
 function main() {
     # We need a recursive level
     rLevel=$(getRecursivityLevel "$cmdLevel")
+    # Do we target a domain
+    domainTarget=$(getDomainTarget "$cmdDomain")
     # Test URL
     # urlStatus="$(getUrlStatus "$cmdUrl")"
     # echo "$urlStatus:$cmdUrl"
