@@ -81,16 +81,6 @@ if [ "$flagGetOpts" == 0 ]; then
     exit 1
 fi
 
-# getUrlStatus() {{{1
-function getUrlStatus() {
-    if [[ -n "$1" && "$1" != "" ]]; then
-        httpStatus=$(curl --write-out %{http_code} --silent --output /dev/null "$1")
-    else
-        httpStatus=""
-    fi
-    echo "$httpStatus"
-}
-
 # getLinkFromUrl() {{{1
 function getLinkFromUrl() {
     if [[ -n "$1" && "$1" != "" ]]; then
@@ -148,7 +138,7 @@ function main() {
 
     for i in "${urlArray[@]}"
     do
-        urlStatus="$(getUrlStatus "$i")"
+        urlStatus="$(bash ./prober.sh -u "$i")"
         echo "$urlStatus:$i"
     done
 }
