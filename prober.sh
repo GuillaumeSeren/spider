@@ -8,6 +8,28 @@
 # Licence:  GPLv3
 # ---------------------------------------------
 
+# usage() {{{1
+# Return the helping message for the use.
+function usage()
+{
+cat << DOC
+
+usage: "$0" options
+
+Test a URL and return HTTP state.
+
+
+OPTIONS:
+    -h  Show this message.
+    -u  url (needed)
+
+Sample:
+    Test a simple url
+    "$0" -u guillaumeseren.com
+
+DOC
+}
+
 # GETOPTS {{{1
 # Get the param of the script.
 while getopts ":u:h" OPTION

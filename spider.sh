@@ -60,7 +60,6 @@ do
         ;;
     u)
         cmdUrl="$OPTARG"
-        # echo "Analyse url:$cmdUrl"
         ;;
     l)
         cmdLevel="$OPTARG"
@@ -87,10 +86,8 @@ function main() {
     declare -a urlArray
     echo "testing: $cmdUrl"
     echo "call web on: $args"
-    # urlArray=($(bash ./web.sh -u guillaumeseren.com -l1 ))
     urlArray=($(bash ./web.sh $args ))
     echo "call prober on array: ${#urlArray[@]}"
-    # getLinkFromUrl "$cmdUrl"
 
     for i in "${urlArray[@]}"
     do

@@ -17,7 +17,7 @@ cat << DOC
 
 usage: "$0" options
 
-This script explore a webapp and test ressources state.
+Explore a ressource URL and return linked URL.
 
 
 OPTIONS:
@@ -39,7 +39,7 @@ DOC
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts ":u:l:d:h" OPTION
+while getopts "l:d:u:h" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -49,7 +49,6 @@ do
         ;;
     u)
         cmdUrl="$OPTARG"
-        # echo "Analyse url:$cmdUrl"
         ;;
     l)
         cmdLevel="$OPTARG"
@@ -74,14 +73,10 @@ fi
 # getLinkFromUrl() {{{1
 function getLinkFromUrl() {
     if [[ -n "$1" && "$1" != "" ]]; then
-        # echo "check links in $1"
         tempFile="$(mktemp -d)"
-        # echo "Use tempFile: $tempFile"
-        # echo "wget command: wget --spider --force-html -P $tempFile -r $rLevel $domainTarget $1"
-        urlArray=($(wget --spider --force-html -P "$tempFile" -r "$rLevel" "$domainTarget" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
-        # echo "Not much links: ${#urlArray[@]}"
+        # echo "wget command: wget --spider --force-html -P $tempFile -r $rLevel $domainTarget $domainTarget $1"
+        urlArray=($(wget --spider --force-html --page-requisites -P "$tempFile" -r "$rLevel" "$domainTarget" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         rm -r "$tempFile"
-        # echo "cleaned tempFile"
 
     else
         urlArray=()
@@ -97,7 +92,7 @@ function getRecursivityLevel(){
             local rLevel=""
         fi
     else
-        local rLevel="-l $defaultRLevel"
+        local rLevel="-l 1"
     fi
     echo "$rLevel"
 }
@@ -120,15 +115,11 @@ function main() {
     # Do we target a domain
     domainTarget=$(getDomainTarget "$cmdDomain")
     # Test URL
-    # urlStatus="$(getUrlStatus "$cmdUrl")"
-    # echo "$urlStatus:$cmdUrl"
     declare -a urlArray
-    # echo "testing: $cmdUrl"
     getLinkFromUrl "$cmdUrl"
 
     for i in "${urlArray[@]}"
     do
-        # urlStatus="$(bash ./prober.sh -u "$i")"
         echo "$i"
     done
 }
