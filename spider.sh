@@ -89,10 +89,14 @@ function main() {
     urlArray=($(bash ./web.sh $args ))
     echo "call prober on array: ${#urlArray[@]}"
 
+    echo "time:http state:URL"
     for i in "${urlArray[@]}"
     do
+        timeBegin="$(date +%s.%N)"
         urlStatus="$(bash ./prober.sh -u "$i")"
-        echo "$urlStatus:$i"
+        timeEnd="$(date +%s.%N)"
+        timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+        echo "${timeTask:0:4}:$urlStatus:$i"
     done
 }
 
