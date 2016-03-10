@@ -6,10 +6,10 @@ Explore a web application and test linked ressources.
 Test a webapp, hunt for 404.
 
 ## Design
-The script is split arround 3 modules:
-* spider: User interface, can instanciate other modules.
+The script is split around 3 modules:
+* spider: User interface, can launch other modules.
 * web: Return linked ressources on a given URL (also img, css, js).
-* prober: Test a URL and return HTTP code.
+* prober: Test a URL and return HTTP code, and timer.
 
 ## Beta / Proof
 This script is still in beta.
