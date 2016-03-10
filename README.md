@@ -1,7 +1,7 @@
 spider
 ======
 Explore a web application and test linked ressources.
-
+```
    _____ _____ _____ _____  ______ _____
   / ____|  __ \_   _|  __ \|  ____|  __ \
  | (___ | |__) || | | |  | | |__  | |__) |
@@ -27,7 +27,7 @@ Explore a web application and test linked ressources.
   ^^      ::             ::      ^^
           ::             ::
           ^^             ^^
-
+```
 
 ## Why ?
 Test a webapp, hunt for 404.
