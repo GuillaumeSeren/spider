@@ -19,12 +19,15 @@ Here is a list of needed features.
 
 STATUS | DESCRIPTION
 -------|------------
-`DONE` | Return a list of linked ressources of 1 page.
-`DONE` | Return the HTTP status of a ressources (link).
-`DONE` | Return the time of the prober call on a ressource.
 `TODO` | Discover recursively all ressources, to slow actually.
 `TODO` | Generate a dependency graph to represent the webapp.
 `TODO` | Add a DB to store the graph, and request it.
+`TODO` | Add a sorting option (by speed, by http code).
+`TODO` | Add a configurable output (no speed / no http / target page).
+`TODO` | Add parallel process for web & prober.
+`TODO` | Add support for login (cookie / session).
+`TODO` | Add a way to define a route to simulate a user.
+`TODO` | Add stress test option (ab) to simulate a group.
 
 ## Participate !
 If you find it useful, and would like to add your tips and tricks in it,
