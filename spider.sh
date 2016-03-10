@@ -9,16 +9,13 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO: Explore all ressources but stay on the same domain.
 
 # Error Codes {{{1
 # 0 - Ok
 
 # Default variables {{{1
 flagGetOpts=0
-defaultRLevel=1
-args="$@"
-declare -A urlPageList
+args="${*}"
 
 # usage() {{{1
 # Return the helping message for the use.
@@ -85,8 +82,8 @@ fi
 function main() {
     declare -a urlArray
     echo "testing: $cmdUrl"
-    echo "call web on: $args"
-    urlArray=($(bash ./web.sh $args ))
+    echo "call web on: ${args}"
+    urlArray=($(bash ./web.sh ${args} ))
     echo "call prober on array: ${#urlArray[@]}"
 
     echo "time:http state:URL"
@@ -101,3 +98,4 @@ function main() {
 }
 
 main
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :

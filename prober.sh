@@ -75,3 +75,4 @@ function main() {
 }
 
 main
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
