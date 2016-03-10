@@ -74,7 +74,6 @@ fi
 function getLinkFromUrl() {
     if [[ -n "$1" && "$1" != "" ]]; then
         tempFile="$(mktemp -d)"
-        # echo "wget command: wget --spider --force-html -P $tempFile -r $rLevel $domainTarget $domainTarget $1"
         urlArray=($(wget --spider --force-html --page-requisites -P "$tempFile" -r "$rLevel" "$domainTarget" "$1" 2>&1 | grep '^--' | awk '{ print $3 }' | uniq))
         rm -r "$tempFile"
 
@@ -125,3 +124,4 @@ function main() {
 }
 
 main
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
