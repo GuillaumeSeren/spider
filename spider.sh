@@ -12,6 +12,7 @@
 
 # Error Codes {{{1
 # 0 - Ok
+# 1 - Output error, the input did not match the pattern
 
 # Default variables {{{1
 flagGetOpts=0
@@ -35,19 +36,23 @@ OPTIONS:
         n: default 1
         0: infinite
     -d  Define a target domain to focus.
+    -o  Define the output : (comma separated, default add everything)
+        timer       Add the timer in the output
+        http_code   Add the http_code return in the output
 
 Sample:
     Test a simple url
     "$0" -u guillaumeseren.com
     Find all linked ressources
     "$0" -u guillaumeseren.com -l 0 -d guillaumeseren.com
+    "$0" -u guillaumeseren.com -o http_code
 
 DOC
 }
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts ":u:l:d:h" OPTION
+while getopts ":u:l:d:o:h" OPTION
 do
     flagGetOpts=1
     case $OPTION in
@@ -63,6 +68,23 @@ do
         ;;
     d)
         cmdDomain="$OPTARG"
+        ;;
+    o)
+        cmdOutput="$OPTARG"
+        # We need to check if there is a , in the string input explode-like
+        # if yes we split into an array and test each entry for each
+        # if no there should be only one entry.
+        if [[ "$cmdOutput" =~ "timer" ]]; then
+          bOutputTimer=1
+        fi
+        if [[ "$cmdOutput" =~ "http_code" ]]; then
+          bOutputHttp=1
+        fi
+        if [[ $bOutputTimer != 1 && $bOutputHttp != 1 ]]; then
+          echo "Output error, the input did not match the pattern"
+          usage
+          exit 1
+        fi
         ;;
     ?)
         echo "commande $1 inconnue"
@@ -83,17 +105,28 @@ function main() {
     declare -a urlArray
     echo "testing: $cmdUrl"
     echo "call web on: ${args}"
-    urlArray=($(bash ./web.sh ${args} ))
+    # urlArray=($(bash ./web.sh ${args} ))
+    urlArray=($(bash ./web.sh -u "$cmdUrl" -l "$cmdLevel" -d "$cmdDomain"  ))
     echo "call prober on array: ${#urlArray[@]}"
 
     echo "time:http state:URL"
     for i in "${urlArray[@]}"
     do
         timeBegin="$(date +%s.%N)"
-        urlStatus="$(bash ./prober.sh -u "$i")"
+        # urlStatus="$(bash ./prober.sh -u "$i")"
+        if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
+          urlStatus="$(bash ./prober.sh -u "$i")"
+          urlStatus="$urlStatus:"
+        fi
         timeEnd="$(date +%s.%N)"
-        timeTask=$(echo "$timeEnd - $timeBegin" | bc)
-        echo "${timeTask:0:4}:$urlStatus:$i"
+        if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
+          timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+          timeTask="${timeTask:0:4}:"
+        fi
+        # timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+        # echo "${timeTask:0:4}$urlStatus$i"
+        # echo "${timeTask:0:4}:$urlStatus:$i"
+        echo "$timeTask$urlStatus$i"
     done
 }
 
