@@ -9,6 +9,15 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO Add actual page that host the link
+# @TODO Add support for login (cookie / session)
+# @TODO Add a way to define a route to simulate a user
+# @TODO Add stress test option (ab) to simulate a group.
+# @TODO Add parallel process for web & prober (perf)
+# @TODO Discover recursively all ressources, too slow actually (v8 perf)
+# @TODO Generate a dependency graph to represent the webapp (niceToHave)
+# @TODO Add a DB to store the graph, and request it (niceToHave)
+# @TODO Add a sorting option (by speed, by http code niceToHave)
 
 # Error Codes {{{1
 # 0 - Ok
