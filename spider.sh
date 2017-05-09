@@ -63,80 +63,76 @@ DOC
 # Get the param of the script.
 while getopts ":u:l:d:o:h" OPTION
 do
-    flagGetOpts=1
-    case $OPTION in
+  flagGetOpts=1
+  case $OPTION in
     h)
+      usage
+      exit 1
+      ;;
+    u)
+      cmdUrl="$OPTARG"
+      ;;
+    l)
+      cmdLevel="$OPTARG"
+      ;;
+    d)
+      cmdDomain="$OPTARG"
+      ;;
+    o)
+      cmdOutput="$OPTARG"
+      # We need to check if there is a , in the string input explode-like
+      # if yes we split into an array and test each entry for each
+      # if no there should be only one entry.
+      if [[ "$cmdOutput" =~ "timer" ]]; then
+        bOutputTimer=1
+      fi
+      if [[ "$cmdOutput" =~ "http_code" ]]; then
+        bOutputHttp=1
+      fi
+      if [[ $bOutputTimer != 1 && $bOutputHttp != 1 ]]; then
+        echo "Output error, the input did not match the pattern"
         usage
         exit 1
-        ;;
-    u)
-        cmdUrl="$OPTARG"
-        ;;
-    l)
-        cmdLevel="$OPTARG"
-        ;;
-    d)
-        cmdDomain="$OPTARG"
-        ;;
-    o)
-        cmdOutput="$OPTARG"
-        # We need to check if there is a , in the string input explode-like
-        # if yes we split into an array and test each entry for each
-        # if no there should be only one entry.
-        if [[ "$cmdOutput" =~ "timer" ]]; then
-          bOutputTimer=1
-        fi
-        if [[ "$cmdOutput" =~ "http_code" ]]; then
-          bOutputHttp=1
-        fi
-        if [[ $bOutputTimer != 1 && $bOutputHttp != 1 ]]; then
-          echo "Output error, the input did not match the pattern"
-          usage
-          exit 1
-        fi
-        ;;
+      fi
+      ;;
     ?)
-        echo "commande $1 inconnue"
-        usage
-        exit
-        ;;
-    esac
+      echo "commande $1 inconnue"
+      usage
+      exit
+      ;;
+  esac
 done
 # We check if getopts did not find no any param
 if [ "$flagGetOpts" == 0 ]; then
-    echo 'This script cannot be launched without options.'
-    usage
-    exit 1
+  echo 'This script cannot be launched without options.'
+  usage
+  exit 1
 fi
 
 # main() {{{1
 function main() {
-    declare -a urlArray
-    echo "testing: $cmdUrl"
-    echo "call web on: ${args}"
-    # urlArray=($(bash ./web.sh ${args} ))
-    urlArray=($(bash ./web.sh -u "$cmdUrl" -l "$cmdLevel" -d "$cmdDomain"  ))
-    echo "call prober on array: ${#urlArray[@]}"
+  declare -a urlArray
+  echo "testing: $cmdUrl"
+  echo "call web on: ${args}"
+  # urlArray=($(bash ./web.sh ${args} ))
+  urlArray=($(bash ./web.sh -u "$cmdUrl" -l "$cmdLevel" -d "$cmdDomain"  ))
+  echo "call prober on array: ${#urlArray[@]}"
 
-    echo "time:http state:URL"
-    for i in "${urlArray[@]}"
-    do
-        timeBegin="$(date +%s.%N)"
-        # urlStatus="$(bash ./prober.sh -u "$i")"
-        if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
-          urlStatus="$(bash ./prober.sh -u "$i")"
-          urlStatus="$urlStatus:"
-        fi
-        timeEnd="$(date +%s.%N)"
-        if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
-          timeTask=$(echo "$timeEnd - $timeBegin" | bc)
-          timeTask="${timeTask:0:4}:"
-        fi
-        # timeTask=$(echo "$timeEnd - $timeBegin" | bc)
-        # echo "${timeTask:0:4}$urlStatus$i"
-        # echo "${timeTask:0:4}:$urlStatus:$i"
-        echo "$timeTask$urlStatus$i"
-    done
+  echo "time:http state:URL"
+  for i in "${urlArray[@]}"
+  do
+    timeBegin="$(date +%s.%N)"
+    if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
+      urlStatus="$(bash ./prober.sh -u "$i")"
+      urlStatus="$urlStatus:"
+    fi
+    timeEnd="$(date +%s.%N)"
+    if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
+      timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+      timeTask="${timeTask:0:4}:"
+    fi
+    echo "$timeTask$urlStatus$i"
+  done
 }
 
 main

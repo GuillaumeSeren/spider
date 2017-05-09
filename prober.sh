@@ -34,44 +34,43 @@ DOC
 # Get the param of the script.
 while getopts ":u:h" OPTION
 do
-    flagGetOpts=1
-    case $OPTION in
+  flagGetOpts=1
+  case $OPTION in
     h)
-        usage
-        exit 1
-        ;;
+      usage
+      exit 1
+      ;;
     u)
-        cmdUrl="$OPTARG"
-        # echo "Analyse url:$cmdUrl"
-        ;;
+      cmdUrl="$OPTARG"
+      ;;
     ?)
-        echo "commande $1 inconnue"
-        usage
-        exit
-        ;;
-    esac
+      echo "commande $1 inconnue"
+      usage
+      exit
+      ;;
+  esac
 done
 # We check if getopts did not find no any param
 if [ "$flagGetOpts" == 0 ]; then
-    echo 'This script cannot be launched without options.'
-    usage
-    exit 1
+  echo 'This script cannot be launched without options.'
+  usage
+  exit 1
 fi
 
 # getUrlStatus() {{{1
 function getUrlStatus() {
-    if [[ -n "$1" && "$1" != "" ]]; then
-        httpStatus=$(curl --write-out %{http_code} --silent --output /dev/null "$1")
-    else
-        httpStatus=""
-    fi
-    echo "$httpStatus"
+  if [[ -n "$1" ]]; then
+    httpStatus=$(curl --write-out %{http_code} --silent --output /dev/null "$1")
+  else
+    httpStatus=""
+  fi
+  echo "$httpStatus"
 }
 
 # main() {{{1
 function main() {
-    urlStatus="$(getUrlStatus "$cmdUrl")"
-    echo "$urlStatus"
+  urlStatus="$(getUrlStatus "$cmdUrl")"
+  echo "$urlStatus"
 }
 
 main
