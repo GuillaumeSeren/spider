@@ -9,9 +9,7 @@
 # ---------------------------------------------
 
 # TaskList {{{1
-# @TODO Add nil '' option to output config
 # @TODO Add visited array to be sure to not go infinite in case of recursion
-# @TODO Add option to output only html link (not js, css, img)
 # @TODO Add actual page that host the link
 # @TODO Add support for login (cookie / session)
 # @TODO Add a way to define a route to simulate a user
@@ -121,8 +119,6 @@ do
         usage
         exit 5
       fi
-      # if [[ "$cmdOutput" =~ "html" ]]; then
-      # fi
       cmdFilter="$OPTARG"
       ;;
     ?)
@@ -172,7 +168,6 @@ function main() {
   declare -a urlArray
   echo "testing: $cmdUrl"
   echo "call web on: ${args}"
-  # urlArray=($(bash ./web.sh ${args} ))
   urlArray=($(bash ./web.sh -u "$cmdUrl" -l "$cmdLevel" -d "$cmdDomain"  ))
   echo "call prober on array: ${#urlArray[@]}"
 
@@ -181,20 +176,14 @@ function main() {
   do
     timeBegin="$(date +%s.%N)"
     local urlProber
-    # if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
-      # case "cmdFilter" in
-      if [[ ! -z "$cmdFilter" ]]; then
-        urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      else
-        urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
-      fi
-        # urlProber="$urlProber:"
-    # fi
+    if [[ ! -z "$cmdFilter" ]]; then
+      urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+    else
+      urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+    fi
     timeEnd="$(date +%s.%N)"
-    # if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
-      timeTask=$(echo "$timeEnd - $timeBegin" | bc)
-      timeTask="${timeTask:0:4}"
-    # fi
+    timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+    timeTask="${timeTask:0:4}"
     # Does it need filtering ?
     if [[ -n "$cmdFilter" && "$cmdFilter" == "$urlProber" ]]; then
       getOutputConfigured "$timeTask" "$urlProber" "$i"
