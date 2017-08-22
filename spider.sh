@@ -9,6 +9,9 @@
 # ---------------------------------------------
 
 # TaskList {{{1
+# @TODO Add nil '' option to output config
+# @TODO Add visited array to be sure to not go infinite in case of recursion
+# @TODO Add option to output only html link (not js, css, img)
 # @TODO Add actual page that host the link
 # @TODO Add support for login (cookie / session)
 # @TODO Add a way to define a route to simulate a user
