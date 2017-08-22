@@ -25,6 +25,13 @@
 # Error Codes {{{1
 # 0 - Ok
 # 1 - Output error, the input did not match the pattern
+# 2 - unknown content-type in prober
+# 3 - Prober getUrlContentTypeSimple unknown content-type
+# 4 - Prober Unknown option in mode
+# 5 - Spider filter arg unknown
+# 6 - Prober option unknown
+# 7 - Error in getOutputConfigured args
+
 
 # Default variables {{{1
 flagGetOpts=0
@@ -51,6 +58,10 @@ OPTIONS:
     -o  Define the output : (comma separated, default add everything)
         timer       Add the timer in the output
         http_code   Add the http_code return in the output
+        url         Add the url to the output
+        ! You need at least 1 arg when configuring the output !
+    -f  Filter on content-type, select one of:
+        html | script | media | style
 
 Sample:
     Test a simple url
@@ -64,7 +75,7 @@ DOC
 
 # GETOPTS {{{1
 # Get the param of the script.
-while getopts ":u:l:d:o:h" OPTION
+while getopts ":u:l:d:o:f:h" OPTION
 do
   flagGetOpts=1
   case $OPTION in
@@ -92,11 +103,27 @@ do
       if [[ "$cmdOutput" =~ "http_code" ]]; then
         bOutputHttp=1
       fi
-      if [[ $bOutputTimer != 1 && $bOutputHttp != 1 ]]; then
+      if [[ "$cmdOutput" =~ "url" ]]; then
+        bOutputUrl=1
+      fi
+      # global validation
+      if [[ "$bOutputTimer" != 1 && "$bOutputHttp" != 1 && "$bOutputUrl" != 1 ]]; then
         echo "Output error, the input did not match the pattern"
         usage
         exit 1
       fi
+      ;;
+    f)
+      # @FIXME: validate available filter directly in the prober
+      # @FIXME: Add multiple option instead of just one
+      if [[ "$OPTARG" != 'html' && "$OPTARG" != 'script' && "$OPTARG" != 'media' && "$OPTARG" != 'style' ]]; then
+        echo "Spider unknown filter: $OPTARG"
+        usage
+        exit 5
+      fi
+      # if [[ "$cmdOutput" =~ "html" ]]; then
+      # fi
+      cmdFilter="$OPTARG"
       ;;
     ?)
       echo "commande $1 inconnue"
@@ -112,6 +139,34 @@ if [ "$flagGetOpts" == 0 ]; then
   exit 1
 fi
 
+# function getOutputConfigured() {{{1
+function getOutputConfigured() {
+  local timeTask
+  local urlProber
+  local url
+  # $1 is the timer
+  # $2 is the probe status
+  # $3 is the url
+  # Let's break if either of the arg is not here
+  if [[ -z "$1" || -z "$2" || -z "$3" ]]; then
+    echo "Spider getOutputConfigured a arg is missing"
+    echo "#1: $1"
+    echo "#2: $2"
+    echo "#3: $3"
+    exit 7
+  fi
+  if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
+    timeTask="$1:"
+  fi
+  if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
+    urlProber="$2:"
+  fi
+  if [[ ! -z $bOutputUrl || -z $cmdOutput ]]; then
+    url="$3"
+  fi
+  echo "$timeTask$urlProber$url"
+}
+
 # main() {{{1
 function main() {
   declare -a urlArray
@@ -125,16 +180,27 @@ function main() {
   for i in "${urlArray[@]}"
   do
     timeBegin="$(date +%s.%N)"
-    if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
-      urlStatus="$(bash ./prober.sh -u "$i")"
-      urlStatus="$urlStatus:"
-    fi
+    local urlProber
+    # if [[ ! -z $bOutputHttp || -z $cmdOutput ]]; then
+      # case "cmdFilter" in
+      if [[ ! -z "$cmdFilter" ]]; then
+        urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      else
+        urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+      fi
+        # urlProber="$urlProber:"
+    # fi
     timeEnd="$(date +%s.%N)"
-    if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
+    # if [[ ! -z $bOutputTimer || -z $cmdOutput ]]; then
       timeTask=$(echo "$timeEnd - $timeBegin" | bc)
-      timeTask="${timeTask:0:4}:"
+      timeTask="${timeTask:0:4}"
+    # fi
+    # Does it need filtering ?
+    if [[ -n "$cmdFilter" && "$cmdFilter" == "$urlProber" ]]; then
+      getOutputConfigured "$timeTask" "$urlProber" "$i"
+    elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
+      getOutputConfigured "$timeTask" "$urlProber" "$i"
     fi
-    echo "$timeTask$urlStatus$i"
   done
 }
 
