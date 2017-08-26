@@ -39,6 +39,10 @@
 # Default variables {{{1
 flagGetOpts=0
 args="${*}"
+declare -a urlActualRessources
+declare -a urlVisited
+declare -a urlUnVisited
+declare -a urlUnVisitedOutput
 
 # usage() {{{1
 # Return the helping message for the use.
@@ -168,19 +172,97 @@ function getOutputConfigured() {
   echo "$timeTask$urlProber$url"
 }
 
+# function getDuperNumberInArray() {{{1
+function getDupeNumberInArray() {
+  name=$1[@]
+  a=("${!name}")
+  dupeTotal=0
+  declare -a sortedArray
+  for ((i=0; i<${#a[@]}; i++));
+  do
+    isInArray=0
+    for u in "${sortedArray[@]}"
+    do
+      if [[ "${u}" == ${a[$i]} ]]; then
+        isInArray=1
+      fi
+    done
+    if [[ "$isInArray" -eq 0 ]]; then
+      # Each value must be tested only once
+      sortedArray=(${sortedArray[@]} ${a[$i]})
+      # echo "sortedArray: ${sortedArray[@]}"
+      # echo "searching:${i} - ${a[$i]}"
+      dupeCount=0
+      for ((j=0; j<${#a[@]}; j++));
+      do
+        if [[ "${a[$i]}" == "${a[$j]}" ]]; then
+          # echo "There is a match on ${a[$i]}"
+          dupeCount=$((dupeCount+1))
+          # echo "dupecount: ${dupeCount}"
+        fi
+      done
+      if [[ ${dupeCount} -ge 2 ]]; then
+        # echo "there is more than 1 dupe"
+        dupeTotal=$(( dupeTotal + dupeCount -1))
+        # echo "dupeTotal: ${dupeTotal}"
+      fi
+    fi
+  done
+  echo "${dupeTotal}"
+}
+
+# function setDedupeInArray() {{{1
+function setDedupeInArray() {
+  echo "setDedupeInArray"
+  name=$1[@]
+  a=("${!name}")
+  declare -a outputArray
+  local i j
+  for i in "${a[@]}"
+  do
+    dupe=0
+    echo "testing $i"
+    for j in "${outputArray[@]}"
+    do
+      if [[ "$i" == "$j" ]]; then
+        echo "there is a match with $j"
+        # already in the array
+        dupe=1
+      fi
+    done
+    if [[ "${dupe}" -eq 0 ]]; then
+      # Not in the array
+      echo "$i not matched adding"
+      outputArray=(${outputArray[@]} ${i})
+      echo "${outputArray[@]}"
+    fi
+  done
+  echo "${outputArray[@]}"
+}
+
 # function main() {{{1
 function main() {
-  declare -a urlActualRessources
-  declare -a urlVisited
-  declare -a urlUnVisited
-  declare -a urlUnVisitedOutput
   # Add cmdUrl to urlUnVisited
   urlUnVisited=(${urlUnVisited[@]} ${cmdUrl})
   echo "testing: ${urlUnVisited[0]}"
   # @FIXME Move that message to a debug / verbose mode
   echo "call web on: ${args}"
   # Now cmdLevel is not given to wget call but the number of loop below
+  # We need to count the size of array to output to user
+  # urlActualRessources=('toto' 'titi' 'tutu' 'toto' 'titi')
+  # setDedupeInArray "urlActualRessources"
+  # exit 1
   urlActualRessources=($(bash ./web.sh -u "$cmdUrl" -l "1" -d "$cmdDomain"  ))
+  dupeRessource=$(getDupeNumberInArray "urlActualRessources")
+  # check ressources array for duplicate
+  if [[ ${dupeRessource} -gt 0 ]]; then
+    echo "dupe count: ${dupeRessource}"
+    echo "deduplicate"
+    echo "${urlActualRessources[@]}"
+    urlActualRessources=($(setDedupeInArray "urlActualRessources"))
+    dupeRessource=$(getDupeNumberInArray "urlActualRessources")
+    echo "after dedupe check dupe: ${dupeRessource}"
+  fi
   echo "Number of ressources of the page: ${#urlActualRessources[@]}"
   # @FIXME Move that message to a debug / verbose mode
   echo "time:page state:URL"
@@ -313,7 +395,18 @@ function main() {
     # echo ">>[1] ${urlUnVisited[1]}"
     # 1 check if not already in visited (might be a default)
     # 2 send web to get the urlActualRessources array
+    # unset urlActualRessources
+    # declare -a urlActualRessources
+    echo "webing on ${urlUnVisited[0]}"
+    # set -x
+    urlActualRessources=($(bash ./web.sh -u "${urlUnVisited[0]}" -l "1" -d "$cmdDomain"  ))
+    echo "size of urlActualRessources ${#urlActualRessources[@]}"
     # 3 loop on the ressources and probe the state
+    local ressource
+    for ressource in "${urlActualRessources[@]}"
+    do
+      echo "${ressource}"
+    done
     # 4 display to the user
     # 5 Add the html in unVisited if not already in there
   fi
