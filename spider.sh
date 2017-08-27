@@ -315,6 +315,34 @@ function deleteInArray() {
     exit 9
   fi
 }
+
+# Function isValueNotInArray() {{{1
+function isValueNotInArray() {
+  local name value array valueInArray
+  if [[ -n "$1" && -n "$2" ]]; then
+    name=$1[@]
+    array=("${!name}")
+    value="$2"
+    valueInArray=0
+    # echo "isValueNotInArray: testing $value"
+    for ((i=0; i<${#array[@]}; i++));
+    do
+      # echo "isValueNotInArray: ${array[$i]} == $value"
+      if [[ "${array[$i]}" == "$value" ]]; then
+        valueInArray=1
+      fi
+    done
+    echo "$valueInArray"
+  else
+    # One of the needed param is missing
+    # inform the user and die
+    echo "isValueNotInArray: one of the var is empty"
+    echo "\$1: $1"
+    echo "\$2: $2"
+    exit 9
+  fi
+}
+
 # function main() {{{1
 function main() {
   # Add cmdUrl to urlUnVisited
@@ -326,14 +354,13 @@ function main() {
   # done
   # exit 666
   urlUnVisited=($(addUniqInArray urlUnVisited "${cmdUrl}"))
-  echo "testing: ${urlUnVisited[0]}"
   # @FIXME Move that message to a debug / verbose mode
   echo "call web on: ${args}"
   # Now cmdLevel is not given to wget call but the number of loop below
   # We need to count the size of array to output to user
   urlActualRessources=($(bash ./web.sh -u "$cmdUrl" -l "1" -d "$cmdDomain"  ))
   # @FIXME: Refactor the duplication test + deduplication into a function
-  # -> Begin of deduplication
+  # -> Begin of deduplication {{{2
   local dupeRessource
   dupeRessource=$(getDupeNumberInArray "urlActualRessources")
   # check ressources array for duplicate
@@ -345,10 +372,11 @@ function main() {
     dupeRessource=$(getDupeNumberInArray "urlActualRessources")
     echo "After dedupeplication count: ${dupeRessource}"
   fi
-  # <- End of test + deduplication
+  # <- End of test + deduplication 2}}}
   # @FIXME: Refactor the ressources probing into a function
   # -> Begin ressources probing
   # @FIXME Move that message to a debug / verbose mode
+  echo "testing: ${urlUnVisited[0]}"
   echo "Number of ressources of the page: ${#urlActualRessources[@]}"
   echo "time:page state:URL"
   # This loop call prober (curl on each ressources of urlActualRessources)
@@ -361,7 +389,22 @@ function main() {
     local urlHttp
     timeBegin="$(date +%s.%N)"
     if [[ -n "$cmdFilter" ]]; then
+      # @FIXME Refactor in a function
+      # echo "cmdFilter: ${cmdFilter}"
+      # echo "\$i: $i"
       urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      # @FIXME: Find a way to get the list of available value by asking prober
+      # directly, and not maintain that list everywhere
+      # if [[ "${urlProber}" != 'html' ]] && [[ "${urlProber}" != 'text' ]] && [[
+      #   "${urlProber}" != 'media' ]] && [[ "${urlProber}" != 'script' ]] && [[
+      #   "${urlProber}" != 'style' ]] && [[ "${urlProber}" != 'feed' ]] && [[
+      #   "${urlProber}" != 'search' ]]; then
+      #   echo "Prober unknown content-type of $i"
+      #   echo "content-type: ${urlProber}"
+      #   exit 3
+      # fi
+      # echo "urlProber: ${urlProber}"
+      # echo "PPID: $exitCode"
     else
       urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
     fi
@@ -381,10 +424,15 @@ function main() {
       # If not test it (one more curl call)
       urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
     fi
+    # echo "urlHttp: ${urlHttp}"
     # Now if the ressource is a html type add it to unvisited array
     if [[ "${urlHttp}" == "html" ]]; then
       # if not already in the array we add it
-      urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
+      # We need to test that value is not in visited already
+      # isValueNotInArray urlVisited ${i}
+      if [[ "$(isValueNotInArray urlVisited ${i})" -eq '0' ]]; then
+        urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
+      fi
 
       # @FIXME: change that to a verbose mode
       #   echo "is not a url"
@@ -393,96 +441,93 @@ function main() {
   done
   # -> End ressources probing
   # Add it to the visited
-  # urlVisited=(${urlVisited[@]} ${urlUnVisited[0]})
   urlVisited=($(addUniqInArray urlVisited "${cmdUrl}"))
-  # @FIXME: Refactor using a deleteFromArray function
+  # Delete from the unvisited
   urlUnVisited=($(deleteInArray urlUnVisited "${cmdUrl}"))
-  # # -> Begin deleteFromArray
-  # # remove the visited from unvisited
-  # local visited
-  # local unVisited
-  # local unVisitedId
-  # local unVisitedMatch
-  # echo 'clean the visited from the unVisited list'
-  # for visited in "${urlVisited[@]}"
-  # do
-  #   unVisitedId=0
-  #   for unVisited in "${urlUnVisited[@]}"
-  #   do
-  #     if [[ "${visited}" == "${unVisited}" ]]; then
-  #       echo "there is a match on ${#unVisited[@]}"
-  #       echo "${visited}"
-  #       # the is a match
-  #       # unVisitedMatch="${#unVisited[@]}"
-  #       unVisitedMatch="${unVisitedId}"
-  #       echo "unset ${unVisitedMatch}"
-  #       unset urlUnVisited["${unVisitedMatch}"]
-  #     fi
-  #     unVisitedId=$((unVisitedId+1))
-  #     # echo "unVisitedId = ${unVisitedId}"
-  #   done
-  #   # delete the match
-  #   # echo ">>>> ${unVisitedMatch}"
-  # done
-  # # Remove the unvisited url for the unvisited array
-  # # @FIXME check if we delete the right think (validate the string)
-  # # unset urlUnVisited[0]
-  # # Display visited
-  # echo 'visited'
-  # for j in "${urlVisited[@]}"
-  # do
-  #   echo "$j"
-  # done
-  # # Display unvisited
-  # echo 'unvisited'
-  # for k in  "${urlUnVisited[@]}"
-  # do
-  #   # echo "${#urlUnVisited[@]} - $k"
-  #   # Re index as a new array
-  #   urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${k})
-  # done
-  # # echo "unvisitedOutput"
-  # # for a in  "${urlUnVisitedOutput[@]}"
-  # # do
-  # #   # echo "${#urlUnVisitedOutput[@]} - $a"
-  # #   # Re index as a new array
-  # #   urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${a})
-  # # done
-
-  # # As the array was cleaned from some entries we need to re index
-  # unset urlUnVisited
-  # declare -a urlUnVisited
-  # urlUnVisited=("${urlUnVisitedOutput[@]}")
-  # # -> Begin deleteFromArray
-
   # END Single pass
   # Do we need to continue iterating ?
 
+  echo "Visiting the page number ${#urlVisited[@]}"
+  echo "Remaining page(s) to visit ${#urlUnVisited[@]}"
   # basically just compare recursive parm if given with size of visited
-  if [[ "${cmdLevel}" -gt "${#urlVisited[@]}" || "${cmdLevel}" == 0 ]]; then
+  while [[ "${cmdLevel}" -gt "${#urlVisited[@]}" || "${cmdLevel}" == 0 ]] && [[ "${#urlUnVisited[@]}" -gt 0 ]];
+  do
+    # Diplay size of visited and unvisited to track progress
+    echo "Visiting the page number ${#urlVisited[@]}"
+    echo "Remaining page(s) to visit ${#urlUnVisited[@]}"
     echo "let's have a look at the next in unVisited"
-    # echo ">>[0] ${urlUnVisitedOutput[0]}"
-    # echo ">>[1] ${urlUnVisitedOutput[1]}"
-    echo ">>[0] ${urlUnVisited[0]}"
-    # echo ">>[1] ${urlUnVisited[1]}"
+    echo "testing: ${urlUnVisited[0]}"
     # 1 check if not already in visited (might be a default)
+    
     # 2 send web to get the urlActualRessources array
-    # unset urlActualRessources
-    # declare -a urlActualRessources
     echo "webing on ${urlUnVisited[0]}"
-    # set -x
     urlActualRessources=($(bash ./web.sh -u "${urlUnVisited[0]}" -l "1" -d "$cmdDomain"  ))
-    echo "size of urlActualRessources ${#urlActualRessources[@]}"
+    echo "Number of ressources of the page: ${#urlActualRessources[@]}"
+    # echo "size of urlActualRessources ${#urlActualRessources[@]}"
     # 3 loop on the ressources and probe the state
-    local ressource
-    for ressource in "${urlActualRessources[@]}"
+    # local ressource
+    for i in "${urlActualRessources[@]}"
     do
-      echo "${ressource}"
-    done
-    # 4 display to the user
-    # 5 Add the html in unVisited if not already in there
-  fi
-}
+      # echo "${ressource}"
+      local timeBegin
+      local timeEnd
+      local timeTask
+      local urlProber
+      local urlHttp
+      timeBegin="$(date +%s.%N)"
+      if [[ -n "$cmdFilter" ]]; then
+        urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      else
+        urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+      fi
+      timeEnd="$(date +%s.%N)"
+      timeTask=$(echo "$timeEnd - $timeBegin" | bc)
+      timeTask="${timeTask:0:4}"
+      # Does it need filtering ?
+      if [[ -n "$cmdFilter" && "$cmdFilter" == "$urlProber" ]]; then
+        getOutputConfigured "$timeTask" "$urlProber" "$i"
+      elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
+        getOutputConfigured "$timeTask" "$urlProber" "$i"
+      fi
+      # If it was tested for content-type just use the result
+      if [[ -n "$cmdFilter" ]]; then
+        urlHttp="${urlProber}"
+      else
+        # If not test it (one more curl call)
+        urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      fi
+      # Now if the ressource is a html type add it to unvisited array
+      if [[ "${urlHttp}" == "html" ]]; then
+        # if not already in the array we add it
+        # We need to test that value is not in visited already
+        if [[ "$(isValueNotInArray urlVisited ${i})" -eq '0' ]]; then
+          urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
+        fi
 
-main
-# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
+        # @FIXME: change that to a verbose mode
+        #   echo "is not a url"
+        #   echo "> ${urlHttp}"
+      fi
+      done
+      # 4 display to the user
+      # 5 Add the html in unVisited if not already in there
+      # Add it to the visited
+      urlVisited=($(addUniqInArray urlVisited "${urlUnVisited[0]}"))
+      # Delete from the unvisited
+      urlUnVisited=($(deleteInArray urlUnVisited "${urlUnVisited[0]}"))
+      # echo "urlVisited -->"
+      # for i in "${urlVisited[@]}"
+      # do
+      #   echo $i
+      # done
+      # echo "urlUnVisited -->"
+      # for i in "${urlUnVisited[@]}"
+      # do
+      #   echo $i
+      # done
+
+    done
+  }
+
+  main
+  # vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
