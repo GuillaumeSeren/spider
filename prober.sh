@@ -98,21 +98,33 @@ function getUrlContentTypeSimple() {
   local contentType
   if [[ -n "$1" ]]; then
     case "$1" in
-      'text/html')
+      'text/html' | 'text/html; charset=utf-8' | 'text/html; charset="UTF-8"' | 'text/html; charset=UTF-8')
         contentType='html'
         ;;
-      'image/png' | 'image/gif')
+      'text/plain' | 'text/plain;charset=UTF-8')
+        contentType='text'
+        ;;
+      'text/xml; charset=UTF-8' | 'application/xml')
+        contentType='xml'
+        ;;
+      'image/png' | 'image/gif' | 'image/jpeg')
         contentType='media'
         ;;
-      'text/javascript')
+      'text/javascript' | 'application/javascript')
         contentType='script'
         ;;
       'text/css')
         contentType='style'
         ;;
+      'application/rss+xml; charset=utf-8' | 'application/atom+xml; charset=utf-8' | 'application/rss+xml; charset="UTF-8"')
+        contentType='feed'
+        ;;
+      'application/opensearchdescription+xml; charset=utf-8')
+        contentType='search'
+        ;;
       *)
         echo "Prober unknown content-type of $1"
-        exit 3
+        # echo 3
     esac
   else
     contentType=""
