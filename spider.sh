@@ -14,8 +14,6 @@
 #       then use an array to store the visited html ressources,
 #       then loop over the remaining html available links if more
 #       than 1 is given (also do not visit same url twice)
-# @TODO Add visited array to be sure to not go infinite in case of recursion
-# @TODO Add actual page that host the link
 # @TODO Add support for login (cookie / session)
 # @TODO Add a way to define a route to simulate a user
 # @TODO Add stress test option (ab) to simulate a group.
@@ -36,7 +34,6 @@
 # 7 - Error in getOutputConfigured args
 # 8 - Error in addUniqInArray
 # 9 - Error in deleteInArray
-
 
 # Default variables {{{1
 flagGetOpts=0
@@ -299,12 +296,12 @@ function deleteInArray() {
     name=$1[@]
     array=("${!name}")
     value="$2"
-  for ((i=0; i<${#array[@]}; i++));
-  do
-    if [[ "${array[$i]}" == "$value" ]]; then
-      unset array[$i]
-    fi
-  done
+    for ((i=0; i<${#array[@]}; i++));
+    do
+      if [[ "${array[$i]}" == "$value" ]]; then
+        unset array[$i]
+      fi
+    done
     echo "${array[@]}"
   else
     # One of the needed param is missing
@@ -346,13 +343,6 @@ function isValueNotInArray() {
 # function main() {{{1
 function main() {
   # Add cmdUrl to urlUnVisited
-  # urlUnVisited=('toto' 'titi' 'tutu' 'tata' 'toto')
-  # urlUnVisited=($(deleteInArray urlUnVisited 'tata'))
-  # for i in "${urlUnVisited[@]}"
-  # do
-  #   echo $i
-  # done
-  # exit 666
   urlUnVisited=($(addUniqInArray urlUnVisited "${cmdUrl}"))
   # @FIXME Move that message to a debug / verbose mode
   echo "call web on: ${args}"
@@ -389,9 +379,6 @@ function main() {
     local urlHttp
     timeBegin="$(date +%s.%N)"
     if [[ -n "$cmdFilter" ]]; then
-      # @FIXME Refactor in a function
-      # echo "cmdFilter: ${cmdFilter}"
-      # echo "\$i: $i"
       urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
       # @FIXME: Find a way to get the list of available value by asking prober
       # directly, and not maintain that list everywhere
@@ -403,8 +390,6 @@ function main() {
       #   echo "content-type: ${urlProber}"
       #   exit 3
       # fi
-      # echo "urlProber: ${urlProber}"
-      # echo "PPID: $exitCode"
     else
       urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
     fi
@@ -447,8 +432,6 @@ function main() {
   # END Single pass
   # Do we need to continue iterating ?
 
-  echo "Visiting the page number ${#urlVisited[@]}"
-  echo "Remaining page(s) to visit ${#urlUnVisited[@]}"
   # basically just compare recursive parm if given with size of visited
   while [[ "${cmdLevel}" -gt "${#urlVisited[@]}" || "${cmdLevel}" == 0 ]] && [[ "${#urlUnVisited[@]}" -gt 0 ]];
   do
@@ -458,7 +441,6 @@ function main() {
     echo "let's have a look at the next in unVisited"
     echo "testing: ${urlUnVisited[0]}"
     # 1 check if not already in visited (might be a default)
-    
     # 2 send web to get the urlActualRessources array
     echo "webing on ${urlUnVisited[0]}"
     urlActualRessources=($(bash ./web.sh -u "${urlUnVisited[0]}" -l "1" -d "$cmdDomain"  ))
@@ -508,26 +490,15 @@ function main() {
         #   echo "is not a url"
         #   echo "> ${urlHttp}"
       fi
-      done
-      # 4 display to the user
-      # 5 Add the html in unVisited if not already in there
-      # Add it to the visited
-      urlVisited=($(addUniqInArray urlVisited "${urlUnVisited[0]}"))
-      # Delete from the unvisited
-      urlUnVisited=($(deleteInArray urlUnVisited "${urlUnVisited[0]}"))
-      # echo "urlVisited -->"
-      # for i in "${urlVisited[@]}"
-      # do
-      #   echo $i
-      # done
-      # echo "urlUnVisited -->"
-      # for i in "${urlUnVisited[@]}"
-      # do
-      #   echo $i
-      # done
-
     done
-  }
+    # 4 display to the user
+    # 5 Add the html in unVisited if not already in there
+    # Add it to the visited
+    urlVisited=($(addUniqInArray urlVisited "${urlUnVisited[0]}"))
+    # Delete from the unvisited
+    urlUnVisited=($(deleteInArray urlUnVisited "${urlUnVisited[0]}"))
+  done
+}
 
-  main
-  # vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
+main
+# vim: set ft=sh ts=2 sw=2 tw=80 foldmethod=marker et :
