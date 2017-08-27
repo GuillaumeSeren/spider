@@ -48,9 +48,9 @@ declare -a urlUnVisitedOutput
 # Return the helping message for the use.
 function usage()
 {
-cat << DOC
+  cat << DOC
 
-usage: "$0" options
+  usage: "$0" options
 
 This script explore a webapp and test ressources state.
 
@@ -243,28 +243,33 @@ function setDedupeInArray() {
 # function main() {{{1
 function main() {
   # Add cmdUrl to urlUnVisited
+  # @FIXME: Refactor to a function AddUniqInArray, that
+  # check if before adding it
   urlUnVisited=(${urlUnVisited[@]} ${cmdUrl})
   echo "testing: ${urlUnVisited[0]}"
   # @FIXME Move that message to a debug / verbose mode
   echo "call web on: ${args}"
   # Now cmdLevel is not given to wget call but the number of loop below
   # We need to count the size of array to output to user
-  # urlActualRessources=('toto' 'titi' 'tutu' 'toto' 'titi')
-  # setDedupeInArray "urlActualRessources"
-  # exit 1
   urlActualRessources=($(bash ./web.sh -u "$cmdUrl" -l "1" -d "$cmdDomain"  ))
+  # @FIXME: Refactor the duplication test + deduplication into a function
+  # -> Begin of deduplication
+  local dupeRessource
   dupeRessource=$(getDupeNumberInArray "urlActualRessources")
   # check ressources array for duplicate
   if [[ ${dupeRessource} -gt 0 ]]; then
     echo "dupe count: ${dupeRessource}"
-    echo "deduplicate"
+    echo "deduplication"
     echo "${urlActualRessources[@]}"
     urlActualRessources=($(setDedupeInArray "urlActualRessources"))
     dupeRessource=$(getDupeNumberInArray "urlActualRessources")
-    echo "after dedupe check dupe: ${dupeRessource}"
+    echo "After dedupeplication count: ${dupeRessource}"
   fi
-  echo "Number of ressources of the page: ${#urlActualRessources[@]}"
+  # <- End of test + deduplication
+  # @FIXME: Refactor the ressources probing into a function
+  # -> Begin ressources probing
   # @FIXME Move that message to a debug / verbose mode
+  echo "Number of ressources of the page: ${#urlActualRessources[@]}"
   echo "time:page state:URL"
   # This loop call prober (curl on each ressources of urlActualRessources)
   for i in "${urlActualRessources[@]}"
@@ -289,17 +294,18 @@ function main() {
     elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
       getOutputConfigured "$timeTask" "$urlProber" "$i"
     fi
+    # If it was tested for content type use the result
     if [[ -n "$cmdFilter" ]]; then
       urlHttp="${urlProber}"
     else
+      # If not test it (one more curl call)
       urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      # echo 'cmdFilter is null'
-      # # echo "${urlProber}"
-      # echo "${urlHttp}"
     fi
-    # set -x
+    # Now if the ressource is a html type add it to unvisited array
     if [[ "${urlHttp}" == "html" ]]; then
       # if not already in the array we add it
+      # @FIXME: Refactor the test+add to array with previous function
+      # -> Begin test+add unvisited
       # case "${myarray[@]}" in  "${urlHttp}") echo "found" ;; esac
       # Add it to unvisited array
       local item
@@ -315,18 +321,23 @@ function main() {
         # echo "add to the unvisited array $i"
         urlUnVisited=(${urlUnVisited[@]} "${i}")
 
-      #   echo "was already in the array"
-      #   echo "${i}"
+        #   echo "was already in the array"
+        #   echo "${i}"
       fi
+      # -> End test+add unvisited
 
-    # else
-    #   echo "is not a url"
-    #   echo "> ${urlHttp}"
+      # @FIXME: change that to a verbose mode
+      #   echo "is not a url"
+      #   echo "> ${urlHttp}"
     fi
   done
+  # -> End ressources probing
   # Add it to the visited
   # urlVisited=(${urlVisited[@]} ${urlUnVisited[0]})
+  # @FIXME: Refactor using the test+add function
   urlVisited=(${urlVisited[@]} ${cmdUrl})
+  # @FIXME: Refactor using a deleteFromArray function
+  # -> Begin deleteFromArray
   # remove the visited from unvisited
   local visited
   local unVisited
@@ -382,6 +393,7 @@ function main() {
   unset urlUnVisited
   declare -a urlUnVisited
   urlUnVisited=("${urlUnVisitedOutput[@]}")
+  # -> Begin deleteFromArray
 
   # END Single pass
   # Do we need to continue iterating ?
