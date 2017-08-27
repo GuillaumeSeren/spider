@@ -34,6 +34,7 @@
 # 5 - Spider filter arg unknown
 # 6 - Prober option unknown
 # 7 - Error in getOutputConfigured args
+# 8 - Error in addUniqInArray
 
 
 # Default variables {{{1
@@ -221,31 +222,77 @@ function setDedupeInArray() {
   for i in "${a[@]}"
   do
     dupe=0
-    echo "testing $i"
+    # echo "testing $i"
     for j in "${outputArray[@]}"
     do
       if [[ "$i" == "$j" ]]; then
-        echo "there is a match with $j"
+        # echo "there is a match with $j"
         # already in the array
         dupe=1
       fi
     done
     if [[ "${dupe}" -eq 0 ]]; then
       # Not in the array
-      echo "$i not matched adding"
+      # echo "$i not matched adding"
       outputArray=(${outputArray[@]} ${i})
-      echo "${outputArray[@]}"
+      # echo "${outputArray[@]}"
     fi
   done
   echo "${outputArray[@]}"
 }
 
+# # function valueIsInArray() {{{1
+# function valueIsInArray() {
+#   if [[ -n "$1" || -n "$2" ]]; then
+#     # Do the stuff
+#     name=$1[@]
+#     array=("${!name}")
+#   else
+#     # One of the needed param is missing
+#     # inform the user and die
+#     echo "valueIsInArray: one of the var is empty"
+#     echo "\$1"
+#   fi
+# }
+
+# function addUniqInArray() {{{1
+# # first arg is array name
+# # second arg is value
+function addUniqInArray() {
+  # local name value arrayItem valueFound
+  local value arrayItem valueFound
+  if [[ -n "$1" && -n "$2" ]]; then
+    valueFound=0
+    # Do the stuff
+    name=$1[@]
+    array=("${!name}")
+    # declare -a array=("{!$1}")
+    value="$2"
+    for arrayItem in "${array[@]}"
+    do
+      if [[ "${arrayItem}" == "${value}" ]]; then
+        valueFound=1
+      fi
+    done
+    if [[ "${valueFound}" == 0 ]]; then
+      # Add value to the array
+      array=(${array[@]} ${value})
+    fi
+    echo "${array[@]}"
+  else
+    # One of the needed param is missing
+    # inform the user and die
+    echo "valueIsInArray: one of the var is empty"
+    echo "\$1: $1"
+    echo "\$2: $2"
+    exit 8
+  fi
+}
+
 # function main() {{{1
 function main() {
   # Add cmdUrl to urlUnVisited
-  # @FIXME: Refactor to a function AddUniqInArray, that
-  # check if before adding it
-  urlUnVisited=(${urlUnVisited[@]} ${cmdUrl})
+  urlUnVisited=($(addUniqInArray urlUnVisited "${cmdUrl}"))
   echo "testing: ${urlUnVisited[0]}"
   # @FIXME Move that message to a debug / verbose mode
   echo "call web on: ${args}"
@@ -294,7 +341,7 @@ function main() {
     elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
       getOutputConfigured "$timeTask" "$urlProber" "$i"
     fi
-    # If it was tested for content type use the result
+    # If it was tested for content-type just use the result
     if [[ -n "$cmdFilter" ]]; then
       urlHttp="${urlProber}"
     else
@@ -304,27 +351,7 @@ function main() {
     # Now if the ressource is a html type add it to unvisited array
     if [[ "${urlHttp}" == "html" ]]; then
       # if not already in the array we add it
-      # @FIXME: Refactor the test+add to array with previous function
-      # -> Begin test+add unvisited
-      # case "${myarray[@]}" in  "${urlHttp}") echo "found" ;; esac
-      # Add it to unvisited array
-      local item
-      local found
-      found=0
-      for item in "${urlUnVisited[@]}"
-      do
-        if [[ "${item}" == "${i}" ]]; then
-          found=1
-        fi
-      done
-      if [[ "${found}" == "0" ]]; then
-        # echo "add to the unvisited array $i"
-        urlUnVisited=(${urlUnVisited[@]} "${i}")
-
-        #   echo "was already in the array"
-        #   echo "${i}"
-      fi
-      # -> End test+add unvisited
+      urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
 
       # @FIXME: change that to a verbose mode
       #   echo "is not a url"
@@ -334,8 +361,7 @@ function main() {
   # -> End ressources probing
   # Add it to the visited
   # urlVisited=(${urlVisited[@]} ${urlUnVisited[0]})
-  # @FIXME: Refactor using the test+add function
-  urlVisited=(${urlVisited[@]} ${cmdUrl})
+  urlVisited=($(addUniqInArray urlVisited "${cmdUrl}"))
   # @FIXME: Refactor using a deleteFromArray function
   # -> Begin deleteFromArray
   # remove the visited from unvisited
