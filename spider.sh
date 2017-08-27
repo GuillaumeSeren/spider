@@ -35,6 +35,7 @@
 # 6 - Prober option unknown
 # 7 - Error in getOutputConfigured args
 # 8 - Error in addUniqInArray
+# 9 - Error in deleteInArray
 
 
 # Default variables {{{1
@@ -289,9 +290,41 @@ function addUniqInArray() {
   fi
 }
 
+# function deleteInArray() {{{1
+# # first arg is array name
+# # second arg is value
+function deleteInArray() {
+  local name value array
+  if [[ -n "$1" && -n "$2" ]]; then
+    name=$1[@]
+    array=("${!name}")
+    value="$2"
+  for ((i=0; i<${#array[@]}; i++));
+  do
+    if [[ "${array[$i]}" == "$value" ]]; then
+      unset array[$i]
+    fi
+  done
+    echo "${array[@]}"
+  else
+    # One of the needed param is missing
+    # inform the user and die
+    echo "deleteInArray: one of the var is empty"
+    echo "\$1: $1"
+    echo "\$2: $2"
+    exit 9
+  fi
+}
 # function main() {{{1
 function main() {
   # Add cmdUrl to urlUnVisited
+  # urlUnVisited=('toto' 'titi' 'tutu' 'tata' 'toto')
+  # urlUnVisited=($(deleteInArray urlUnVisited 'tata'))
+  # for i in "${urlUnVisited[@]}"
+  # do
+  #   echo $i
+  # done
+  # exit 666
   urlUnVisited=($(addUniqInArray urlUnVisited "${cmdUrl}"))
   echo "testing: ${urlUnVisited[0]}"
   # @FIXME Move that message to a debug / verbose mode
@@ -363,63 +396,64 @@ function main() {
   # urlVisited=(${urlVisited[@]} ${urlUnVisited[0]})
   urlVisited=($(addUniqInArray urlVisited "${cmdUrl}"))
   # @FIXME: Refactor using a deleteFromArray function
-  # -> Begin deleteFromArray
-  # remove the visited from unvisited
-  local visited
-  local unVisited
-  local unVisitedId
-  local unVisitedMatch
-  echo 'clean the visited from the unVisited list'
-  for visited in "${urlVisited[@]}"
-  do
-    unVisitedId=0
-    for unVisited in "${urlUnVisited[@]}"
-    do
-      if [[ "${visited}" == "${unVisited}" ]]; then
-        echo "there is a match on ${#unVisited[@]}"
-        echo "${visited}"
-        # the is a match
-        # unVisitedMatch="${#unVisited[@]}"
-        unVisitedMatch="${unVisitedId}"
-        echo "unset ${unVisitedMatch}"
-        unset urlUnVisited["${unVisitedMatch}"]
-      fi
-      unVisitedId=$((unVisitedId+1))
-      # echo "unVisitedId = ${unVisitedId}"
-    done
-    # delete the match
-    # echo ">>>> ${unVisitedMatch}"
-  done
-  # Remove the unvisited url for the unvisited array
-  # @FIXME check if we delete the right think (validate the string)
-  # unset urlUnVisited[0]
-  # Display visited
-  echo 'visited'
-  for j in "${urlVisited[@]}"
-  do
-    echo "$j"
-  done
-  # Display unvisited
-  echo 'unvisited'
-  for k in  "${urlUnVisited[@]}"
-  do
-    # echo "${#urlUnVisited[@]} - $k"
-    # Re index as a new array
-    urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${k})
-  done
-  # echo "unvisitedOutput"
-  # for a in  "${urlUnVisitedOutput[@]}"
+  urlUnVisited=($(deleteInArray urlUnVisited "${cmdUrl}"))
+  # # -> Begin deleteFromArray
+  # # remove the visited from unvisited
+  # local visited
+  # local unVisited
+  # local unVisitedId
+  # local unVisitedMatch
+  # echo 'clean the visited from the unVisited list'
+  # for visited in "${urlVisited[@]}"
   # do
-  #   # echo "${#urlUnVisitedOutput[@]} - $a"
-  #   # Re index as a new array
-  #   urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${a})
+  #   unVisitedId=0
+  #   for unVisited in "${urlUnVisited[@]}"
+  #   do
+  #     if [[ "${visited}" == "${unVisited}" ]]; then
+  #       echo "there is a match on ${#unVisited[@]}"
+  #       echo "${visited}"
+  #       # the is a match
+  #       # unVisitedMatch="${#unVisited[@]}"
+  #       unVisitedMatch="${unVisitedId}"
+  #       echo "unset ${unVisitedMatch}"
+  #       unset urlUnVisited["${unVisitedMatch}"]
+  #     fi
+  #     unVisitedId=$((unVisitedId+1))
+  #     # echo "unVisitedId = ${unVisitedId}"
+  #   done
+  #   # delete the match
+  #   # echo ">>>> ${unVisitedMatch}"
   # done
+  # # Remove the unvisited url for the unvisited array
+  # # @FIXME check if we delete the right think (validate the string)
+  # # unset urlUnVisited[0]
+  # # Display visited
+  # echo 'visited'
+  # for j in "${urlVisited[@]}"
+  # do
+  #   echo "$j"
+  # done
+  # # Display unvisited
+  # echo 'unvisited'
+  # for k in  "${urlUnVisited[@]}"
+  # do
+  #   # echo "${#urlUnVisited[@]} - $k"
+  #   # Re index as a new array
+  #   urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${k})
+  # done
+  # # echo "unvisitedOutput"
+  # # for a in  "${urlUnVisitedOutput[@]}"
+  # # do
+  # #   # echo "${#urlUnVisitedOutput[@]} - $a"
+  # #   # Re index as a new array
+  # #   urlUnVisitedOutput=(${urlUnVisitedOutput[@]} ${a})
+  # # done
 
-  # As the array was cleaned from some entries we need to re index
-  unset urlUnVisited
-  declare -a urlUnVisited
-  urlUnVisited=("${urlUnVisitedOutput[@]}")
-  # -> Begin deleteFromArray
+  # # As the array was cleaned from some entries we need to re index
+  # unset urlUnVisited
+  # declare -a urlUnVisited
+  # urlUnVisited=("${urlUnVisitedOutput[@]}")
+  # # -> Begin deleteFromArray
 
   # END Single pass
   # Do we need to continue iterating ?
