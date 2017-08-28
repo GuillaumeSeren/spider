@@ -67,27 +67,21 @@ function getUrlHttpStatus() {
 }
 
 # getContentType() {{{1
-# loop all keys
-# for K in "${!MYMAP[@]}"; do echo $K; done
 # @FIXME: export usefull function in a lib file
 # and use addUniqInArray()
 function getContentType() {
   local key item match
   declare -a array
-  # echo ${!content_type[@]}
   for key in "${!content_type[@]}"
   do
     match='0'
-    # echo "key: ${key}"
     for item in "${array[@]}";
     do
-      # echo "item: ${item}"
       if [[ "${key}" == "${item}" ]]; then
         match='1'
       fi
     done
     # Si pas de match ou tableau vide
-    # if [[ "${match}" == "0" || "{#array[@]}" -eq 0 ]]; then
     if [[ "${match}" == "0" ]]; then
       array=(${array[@]} "${key}")
     fi
@@ -104,16 +98,13 @@ function getSimpleContentType() {
   for value in "${content_type[@]}"
   do
     match='0'
-    # echo "value: ${value}"
     for item in "${array[@]}";
     do
-      # echo "item: ${item}"
       if [[ "${value}" == "${item}" ]]; then
         match='1'
       fi
     done
     # Si pas de match ou tableau vide
-    # if [[ "${match}" == "0" || "{#array[@]}" -eq 0 ]]; then
     if [[ "${match}" == "0" ]]; then
       array=(${array[@]} ${value})
     fi
@@ -180,9 +171,7 @@ do
     m)
       cmdMode="$OPTARG"
       # validate allowed mode
-      # nil or ''   default http
-      # http
-      # content-type
+      # nil or ''   default http content-type
       if [[ "$cmdMode" != '' && "$cmdMode" != 'http' && "$cmdMode" != 'content-type' ]]; then
         echo "Prober unknown mode : $cmdMode"
         exit 4
