@@ -239,19 +239,28 @@ function setDedupeInArray() {
   echo "${outputArray[@]}"
 }
 
-# # function valueIsInArray() {{{1
-# function valueIsInArray() {
-#   if [[ -n "$1" || -n "$2" ]]; then
-#     # Do the stuff
-#     name=$1[@]
-#     array=("${!name}")
-#   else
-#     # One of the needed param is missing
-#     # inform the user and die
-#     echo "valueIsInArray: one of the var is empty"
-#     echo "\$1"
-#   fi
-# }
+# function valueIsInArray() {{{1
+function valueIsInArray() {
+  if [[ -n "$1" || -n "$2" ]]; then
+    # Do the stuff
+    name=$1[@]
+    array=("${!name}")
+    value="$2"
+    match=0
+    for item in "${array[@]}"
+    do
+      if [[ "$item" == "$value" ]]; then
+        match=1
+      fi
+    done
+  echo "${match}"
+  else
+    # One of the needed param is missing
+    # inform the user and die
+    echo "valueIsInArray: one of the var is empty"
+    echo "\$1"
+  fi
+}
 
 # function addUniqInArray() {{{1
 # # first arg is array name
@@ -280,7 +289,7 @@ function addUniqInArray() {
   else
     # One of the needed param is missing
     # inform the user and die
-    echo "valueIsInArray: one of the var is empty"
+    echo "addUniqInArray: one of the var is empty"
     echo "\$1: $1"
     echo "\$2: $2"
     exit 8
@@ -378,22 +387,29 @@ function main() {
     local urlProber
     local urlHttp
     timeBegin="$(date +%s.%N)"
+    # If it was tested for content-type just use the result
+    # if [[ -n "$cmdFilter" ]]; then
+    # else
+    # fi
     if [[ -n "$cmdFilter" ]]; then
+      # get the available content-type
+      # @FIXME: export in a function
+      content_type=( $(bash ./prober.sh -l simple) )
       urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      # @FIXME: Find a way to get the list of available value by asking prober
-      # directly, and not maintain that list everywhere
-      # if [[ "${urlProber}" != 'html' ]] && [[ "${urlProber}" != 'text' ]] && [[
-      #   "${urlProber}" != 'media' ]] && [[ "${urlProber}" != 'script' ]] && [[
-      #   "${urlProber}" != 'style' ]] && [[ "${urlProber}" != 'feed' ]] && [[
-      #   "${urlProber}" != 'search' ]]; then
-      #   echo "Prober unknown content-type of $i"
-      #   echo "content-type: ${urlProber}"
-      #   exit 3
-      # fi
+      timeEnd="$(date +%s.%N)"
+      if [[ "$(valueIsInArray content_type $urlProber)" == 0 ]]; then
+        echo "Prober unknown content-type of $i"
+        echo "content-type: ${urlProber}"
+        exit 3
+      fi
+      urlHttp="${urlProber}"
     else
       urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+      timeEnd="$(date +%s.%N)"
+      # If not test it (one more curl call)
+      urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
     fi
-    timeEnd="$(date +%s.%N)"
+    # timeEnd="$(date +%s.%N)"
     timeTask=$(echo "$timeEnd - $timeBegin" | bc)
     timeTask="${timeTask:0:4}"
     # Does it need filtering ?
@@ -401,13 +417,6 @@ function main() {
       getOutputConfigured "$timeTask" "$urlProber" "$i"
     elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
       getOutputConfigured "$timeTask" "$urlProber" "$i"
-    fi
-    # If it was tested for content-type just use the result
-    if [[ -n "$cmdFilter" ]]; then
-      urlHttp="${urlProber}"
-    else
-      # If not test it (one more curl call)
-      urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
     fi
     # echo "urlHttp: ${urlHttp}"
     # Now if the ressource is a html type add it to unvisited array
@@ -458,11 +467,28 @@ function main() {
       local urlHttp
       timeBegin="$(date +%s.%N)"
       if [[ -n "$cmdFilter" ]]; then
+        # get the available content-type
+        # @FIXME: export in a function
+        content_type=( $(bash ./prober.sh -l simple) )
         urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+        timeEnd="$(date +%s.%N)"
+        if [[ "$(valueIsInArray content_type $urlProber)" == 0 ]]; then
+          echo "Prober unknown content-type of $i"
+          echo "content-type: ${urlProber}"
+          exit 3
+        fi
+        urlHttp="${urlProber}"
       else
         urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+        timeEnd="$(date +%s.%N)"
+        # If not test it (one more curl call)
+        urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
       fi
-      timeEnd="$(date +%s.%N)"
+      # if [[ -n "$cmdFilter" ]]; then
+      #   urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      # else
+      #   urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
+      # fi
       timeTask=$(echo "$timeEnd - $timeBegin" | bc)
       timeTask="${timeTask:0:4}"
       # Does it need filtering ?
@@ -471,13 +497,13 @@ function main() {
       elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
         getOutputConfigured "$timeTask" "$urlProber" "$i"
       fi
-      # If it was tested for content-type just use the result
-      if [[ -n "$cmdFilter" ]]; then
-        urlHttp="${urlProber}"
-      else
-        # If not test it (one more curl call)
-        urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      fi
+      # # If it was tested for content-type just use the result
+      # if [[ -n "$cmdFilter" ]]; then
+      #   urlHttp="${urlProber}"
+      # else
+      #   # If not test it (one more curl call)
+      #   urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
+      # fi
       # Now if the ressource is a html type add it to unvisited array
       if [[ "${urlHttp}" == "html" ]]; then
         # if not already in the array we add it
