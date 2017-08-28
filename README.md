@@ -30,16 +30,20 @@ Explore a web application and test linked ressources.
 ```
 
 ## Why ?
-Test a webapp, hunt for 404.
+Test a webapp
+* Find all link
+* Follow html links
+* Test speed of each ressource
+* Configure output
+* Filter on content-type
+* Setup recursivity level
+* Define a domain to stay on
 
 ## Design
 The script is split around 3 modules:
 * spider: User interface, can launch other modules & configure output.
 * web: Return linked ressources on a given URL (also img, css, js).
-* prober: Test a URL and return HTTP code, and timer.
-
-## Beta / Proof
-This script is still in beta.
+* prober: Test a URL and return HTTP code, timer and content-type.
 
 
 ## Participate !
