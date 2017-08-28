@@ -10,10 +10,6 @@
 
 # TaskList {{{1
 # @TODO:Add a urlTested to map all ressources already tested 1 time
-# @TODO Refactor the recursivity, use wget to target only 1 page
-#       then use an array to store the visited html ressources,
-#       then loop over the remaining html available links if more
-#       than 1 is given (also do not visit same url twice)
 # @TODO Add support for login (cookie / session)
 # @TODO Add a way to define a route to simulate a user
 # @TODO Add stress test option (ab) to simulate a group.
@@ -351,6 +347,12 @@ function isValueNotInArray() {
 
 # function main() {{{1
 function main() {
+  # @FIXME: Maybe export to global variables
+  local timeBegin
+  local timeEnd
+  local timeTask
+  local urlProber
+  local urlHttp
   # Add cmdUrl to urlUnVisited
   urlUnVisited=($(addUniqInArray urlUnVisited "${cmdUrl}"))
   # @FIXME Move that message to a debug / verbose mode
@@ -381,16 +383,7 @@ function main() {
   # This loop call prober (curl on each ressources of urlActualRessources)
   for i in "${urlActualRessources[@]}"
   do
-    local timeBegin
-    local timeEnd
-    local timeTask
-    local urlProber
-    local urlHttp
     timeBegin="$(date +%s.%N)"
-    # If it was tested for content-type just use the result
-    # if [[ -n "$cmdFilter" ]]; then
-    # else
-    # fi
     if [[ -n "$cmdFilter" ]]; then
       # get the available content-type
       # @FIXME: export in a function
@@ -409,7 +402,6 @@ function main() {
       # If not test it (one more curl call)
       urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
     fi
-    # timeEnd="$(date +%s.%N)"
     timeTask=$(echo "$timeEnd - $timeBegin" | bc)
     timeTask="${timeTask:0:4}"
     # Does it need filtering ?
@@ -418,19 +410,13 @@ function main() {
     elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
       getOutputConfigured "$timeTask" "$urlProber" "$i"
     fi
-    # echo "urlHttp: ${urlHttp}"
     # Now if the ressource is a html type add it to unvisited array
     if [[ "${urlHttp}" == "html" ]]; then
       # if not already in the array we add it
       # We need to test that value is not in visited already
-      # isValueNotInArray urlVisited ${i}
       if [[ "$(isValueNotInArray urlVisited ${i})" -eq '0' ]]; then
         urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
       fi
-
-      # @FIXME: change that to a verbose mode
-      #   echo "is not a url"
-      #   echo "> ${urlHttp}"
     fi
   done
   # -> End ressources probing
@@ -439,8 +425,8 @@ function main() {
   # Delete from the unvisited
   urlUnVisited=($(deleteInArray urlUnVisited "${cmdUrl}"))
   # END Single pass
-  # Do we need to continue iterating ?
 
+  # Do we need to continue iterating ?
   # basically just compare recursive parm if given with size of visited
   while [[ "${cmdLevel}" -gt "${#urlVisited[@]}" || "${cmdLevel}" == 0 ]] && [[ "${#urlUnVisited[@]}" -gt 0 ]];
   do
@@ -456,15 +442,8 @@ function main() {
     echo "Number of ressources of the page: ${#urlActualRessources[@]}"
     # echo "size of urlActualRessources ${#urlActualRessources[@]}"
     # 3 loop on the ressources and probe the state
-    # local ressource
     for i in "${urlActualRessources[@]}"
     do
-      # echo "${ressource}"
-      local timeBegin
-      local timeEnd
-      local timeTask
-      local urlProber
-      local urlHttp
       timeBegin="$(date +%s.%N)"
       if [[ -n "$cmdFilter" ]]; then
         # get the available content-type
@@ -484,11 +463,6 @@ function main() {
         # If not test it (one more curl call)
         urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
       fi
-      # if [[ -n "$cmdFilter" ]]; then
-      #   urlProber="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      # else
-      #   urlProber="$(bash ./prober.sh -m 'http' -u "$i")"
-      # fi
       timeTask=$(echo "$timeEnd - $timeBegin" | bc)
       timeTask="${timeTask:0:4}"
       # Does it need filtering ?
@@ -497,13 +471,6 @@ function main() {
       elif [[ -z "$cmdFilter" && "$cmdFilter" == '' ]]; then
         getOutputConfigured "$timeTask" "$urlProber" "$i"
       fi
-      # # If it was tested for content-type just use the result
-      # if [[ -n "$cmdFilter" ]]; then
-      #   urlHttp="${urlProber}"
-      # else
-      #   # If not test it (one more curl call)
-      #   urlHttp="$(bash ./prober.sh -m 'content-type' -u "$i")"
-      # fi
       # Now if the ressource is a html type add it to unvisited array
       if [[ "${urlHttp}" == "html" ]]; then
         # if not already in the array we add it
@@ -511,10 +478,6 @@ function main() {
         if [[ "$(isValueNotInArray urlVisited ${i})" -eq '0' ]]; then
           urlUnVisited=($(addUniqInArray urlUnVisited "${i}"))
         fi
-
-        # @FIXME: change that to a verbose mode
-        #   echo "is not a url"
-        #   echo "> ${urlHttp}"
       fi
     done
     # 4 display to the user
